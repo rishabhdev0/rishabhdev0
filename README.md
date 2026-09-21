@@ -56,13 +56,12 @@ Most of my learning happens by building things, breaking them, measuring exactly
 
 ### 🏗️ Building
 
-**`liquidity-engine`** — a low-latency stock exchange matching engine in C++
+**Nexora** — a full-stack BI & sales analytics platform
 
-* Lock-free SPSC ring buffer for ingest
-* Custom memory pool allocator (~21x faster than `new`/`delete`)
-* Crash-safe append-only journal with replay-on-restart
-* IOC / FOK / modify-in-place order semantics
-* Live WebSocket dashboard in Next.js
+* Analytics engine — KPIs, trends, reports
+* Interactive dashboards — charts & filters
+* Auth, PostgreSQL, Redis caching
+* Object storage (S3), Dockerized infra
 
 </td>
 <td width="50%" valign="top">
@@ -89,54 +88,40 @@ Most of my learning happens by building things, breaking them, measuring exactly
 
 ### ⚙️ `liquidity-engine` — Low-Latency Matching Engine — 🏆 Flagship Project
 
-**A from-scratch stock exchange matching engine in C++, built in phases and benchmarked at every stage — not a toy order book.**
+**A stock exchange matching engine in C++ — lock-free, memory-pooled, crash-safe.**
 
-`C++` `CMake` `GoogleTest` `Google Benchmark` `WebSocket` `Next.js` `Lock-Free Concurrency`
+<p>
+<img src="https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=cplusplus&logoColor=white"/>
+<img src="https://img.shields.io/badge/CMake-064F8C?style=for-the-badge&logo=cmake&logoColor=white"/>
+<img src="https://img.shields.io/badge/GoogleTest-4285F4?style=for-the-badge&logoColor=white"/>
+<img src="https://img.shields.io/badge/WebSocket-2CA5E0?style=for-the-badge&logoColor=white"/>
+<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"/>
+<img src="https://img.shields.io/badge/Lock--Free_Concurrency-FF6F00?style=for-the-badge&logoColor=white"/>
+</p>
 
-```text
-     Ingest Thread                Matching Thread
-   ┌────────────────┐          ┌────────────────────┐
-   │  Order Gateway  │  SPSC   │  MatchingEngine     │
-   │  (WebSocket)    │ ──────► │  ┌───────────────┐  │
-   └────────────────┘ Ring Buf │  │ OrderBook      │  │
-                                │  │ (price-time    │  │
-                                │  │  priority)     │  │
-                                │  └───────┬───────┘  │
-                                │          │           │
-                                │   MemoryPool<Order>  │
-                                │   (3.67ns/op alloc)  │
-                                └──────────┬───────────┘
-                                           │
-                              ┌────────────▼────────────┐
-                              │  Append-Only Journal     │
-                              │  (crash-safe, replayed   │
-                              │   on restart)            │
-                              └────────────┬────────────┘
-                                           │
-                              ┌────────────▼────────────┐
-                              │  Live Dashboard (Next.js)│
-                              │  Price/Depth charts,     │
-                              │  order entry, trade tape │
-                              └──────────────────────────┘
+```mermaid
+flowchart LR
+    A[WebSocket Gateway] --> B[["SPSC Ring Buffer"]]
+    B --> C["MatchingEngine<br/>(memory-pooled)"]
+    C --> D[("Append-only Journal")]
+    C --> E[Live Dashboard]
+
+    style A fill:#161b22,stroke:#58a6ff,color:#c9d1d9
+    style B fill:#161b22,stroke:#f85149,color:#c9d1d9
+    style C fill:#0d1117,stroke:#3fb950,color:#c9d1d9
+    style D fill:#161b22,stroke:#a371f7,color:#c9d1d9
+    style E fill:#0d1117,stroke:#d29922,color:#c9d1d9
 ```
-
-**Real, measured numbers — not marketing copy:**
 
 | Metric | Result |
 |---|---|
-| Order allocation (raw `new`/`delete`) | ~79.2 ns/op |
-| Order allocation (custom memory pool) | **~3.67 ns/op (~21x faster)** |
-| 10k-order batch churn, pooled vs. raw | **~28.9x faster** |
-| Single-threaded rest + fill | ~564 ns / ~1.7–2.1M ops/sec |
-| Concurrent (SPSC-decoupled) producer path | ~1674 ns/op — a deliberate decoupling cost, not a raw-speed win: the ingest thread never blocks on matching |
-| Test suite | 57 passing GoogleTest cases across order book, engine, concurrency, journal replay, and order-type semantics |
+| Memory pool vs. raw `new`/`delete` | **~21x faster** (3.67ns vs 79.2ns/op) |
+| Throughput | ~1.7–2.1M ops/sec single-threaded |
+| Test coverage | 57 passing GoogleTest cases |
 
-**Engineering it actually took to get here:**
-- Built the order book with **price-time priority**, O(1) cancel via index map, and full IOC / FOK / modify-in-place semantics that mirror real exchange behavior (a price or size-increase change loses time priority; a size decrease keeps it)
-- Wrote a custom **memory pool** to kill `malloc` pauses on the hot path, then benchmarked it against the naive version to prove the win
-- Built a **lock-free SPSC ring buffer** to decouple network ingest from matching, and found + fixed a real stack-overflow bug caused by storing the buffer inline instead of on the heap
-- Added a **crash-safe append-only journal** that replays on restart to rebuild pre-crash state
-- Shipped a live **Next.js dashboard** over a WebSocket bridge — price chart, depth chart, order entry, live order cancel, and round-trip latency display
+- Price-time priority order book with O(1) cancel, IOC/FOK, and live modify
+- Lock-free SPSC ring buffer decouples ingest from matching (found & fixed a real stack-overflow bug here)
+- Crash-safe journal replays on restart · live Next.js dashboard over WebSocket
 
 🔗 **Repository:** [rishabhdev0/liquidity-engine](https://github.com/rishabhdev0/liquidity-engine)
 
@@ -146,7 +131,13 @@ Most of my learning happens by building things, breaking them, measuring exactly
 
 A security-focused voting platform exploring how to make digital voting **verifiable without exposing individual ballots**.
 
-`Blockchain` `Cryptography` `Zero-Knowledge Proofs` `React` `Smart Contracts`
+<p>
+<img src="https://img.shields.io/badge/Blockchain-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white"/>
+<img src="https://img.shields.io/badge/Cryptography-4B0082?style=for-the-badge&logoColor=white"/>
+<img src="https://img.shields.io/badge/Zero--Knowledge_Proofs-6A0DAD?style=for-the-badge&logoColor=white"/>
+<img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"/>
+<img src="https://img.shields.io/badge/Smart_Contracts-3C3C3D?style=for-the-badge&logo=solidity&logoColor=white"/>
+</p>
 
 * Smart-contract-backed ballot casting and tallying
 * Zero-knowledge proof design for ballot privacy vs. verifiability
@@ -160,16 +151,32 @@ A security-focused voting platform exploring how to make digital voting **verifi
 
 **A full-stack analytics platform designed around real-world business workflows.**
 
-`Next.js` `TypeScript` `PostgreSQL` `Redis` `Docker` `S3` `Authentication` `Data Visualization`
+<p>
+<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"/>
+<img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
+<img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"/>
+<img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white"/>
+<img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"/>
+<img src="https://img.shields.io/badge/S3-569A31?style=for-the-badge&logo=amazons3&logoColor=white"/>
+<img src="https://img.shields.io/badge/Auth-FFB300?style=for-the-badge&logo=auth0&logoColor=white"/>
+<img src="https://img.shields.io/badge/Data_Viz-00BCD4?style=for-the-badge&logoColor=white"/>
+</p>
 
-```text
-Data Sources → API Layer → Redis Cache → PostgreSQL
-                                 │
-                                 ▼
-                    Analytics Engine (KPIs · Trends · Reports)
-                                 │
-                                 ▼
-                 Interactive Dashboard (Charts · Filters · KPIs)
+```mermaid
+flowchart LR
+    A[Data Sources] --> B[API Layer]
+    B --> C[("Redis Cache")]
+    B --> D[("PostgreSQL")]
+    C --> E["Analytics Engine<br/>KPIs · Trends · Reports"]
+    D --> E
+    E --> F["Interactive Dashboard<br/>Charts · Filters · KPIs"]
+
+    style A fill:#161b22,stroke:#58a6ff,color:#c9d1d9
+    style B fill:#161b22,stroke:#58a6ff,color:#c9d1d9
+    style C fill:#161b22,stroke:#f85149,color:#c9d1d9
+    style D fill:#161b22,stroke:#58a6ff,color:#c9d1d9
+    style E fill:#0d1117,stroke:#3fb950,color:#c9d1d9
+    style F fill:#0d1117,stroke:#a371f7,color:#c9d1d9
 ```
 
 🔗 **Repository:** [View Project](https://github.com/rishabhdev0)
@@ -180,26 +187,27 @@ Data Sources → API Layer → Redis Cache → PostgreSQL
 
 A voice-generation SaaS focused on a clean, production-style user experience.
 
-`Next.js` `React` `TypeScript` `Chatterbox TTS` `Prisma` `Clerk` `Cloud Storage`
+<p>
+<img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white"/>
+<img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black"/>
+<img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white"/>
+<img src="https://img.shields.io/badge/Chatterbox_TTS-FF4081?style=for-the-badge&logoColor=white"/>
+<img src="https://img.shields.io/badge/Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white"/>
+<img src="https://img.shields.io/badge/Clerk-6C47FF?style=for-the-badge&logo=clerk&logoColor=white"/>
+<img src="https://img.shields.io/badge/Cloud_Storage-4CAF50?style=for-the-badge&logoColor=white"/>
+</p>
 
 * AI voice generation & voice cloning
 * Async generation workflows, SaaS billing architecture
 
-🔗 **Repository:** [View Project](https://github.com/rishabhdev0)
+🔗 **Repository:** [rishabhdev0/Sonicra](https://github.com/rishabhdev0/Sonicra)
 
 ---
 
 ## 📈 Engineering Activity
 
 <div align="center">
-<img src="https://github-readme-activity-graph.vercel.app/graph?username=rishabhdev0&bg_color=0d1117&color=58a6ff&line=58a6ff&point=ffffff&area=true&hide_border=true" width="95%"/>
-</div>
-
-<br>
-
-<div align="center">
-<img src="https://github-readme-stats.vercel.app/api?username=rishabhdev0&show_icons=true&hide_border=true&theme=github_dark&include_all_commits=true&count_private=true" height="180"/>
-<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=rishabhdev0&layout=compact&hide_border=true&theme=github_dark&langs_count=8" height="180"/>
+<img src="https://ghchart.rshah.org/58a6ff/rishabhdev0" width="95%"/>
 </div>
 
 <br>
@@ -264,7 +272,12 @@ Advanced DSA    █████████
 ## 🏆 GitHub Achievements
 
 <div align="center">
-<img src="https://github-profile-trophy.vercel.app/?username=rishabhdev0&theme=darkhub&no-frame=true&no-bg=true&margin-w=8&column=6" width="90%"/>
+
+<img src="https://github.com/KaweMaximo/github-profile-achievements/raw/main/images/pull-shark-default.png" width="90" title="Pull Shark — 2+ pull requests merged"/>
+<img src="https://github.com/KaweMaximo/github-profile-achievements/raw/main/images/yolo-default.png" width="90" title="YOLO — merged a PR without code review"/>
+
+**Pull Shark** · **YOLO**
+
 </div>
 
 ---
@@ -279,6 +292,11 @@ mindmap
       Memory Pools
       Crash-Safe Journaling
       Low-Latency C++
+    CS Fundamentals
+      Operating Systems
+      DBMS
+      Computer Networks
+      OOP
     DSA
       Graphs
       Dynamic Programming
@@ -286,10 +304,11 @@ mindmap
       Greedy
       Binary Search
     Full Stack
-      React
-      Next.js
-      Node.js
-      Spring Boot
+      tRPC end-to-end types
+      Prisma + PostgreSQL
+      Server Components
+      WebSockets / real-time
+      Auth & session design
     Infrastructure
       Docker
       Cloud
@@ -309,14 +328,11 @@ mindmap
 
 ## 📌 Featured Projects
 
-<div align="center">
-<a href="https://github.com/rishabhdev0/liquidity-engine">
-<img src="https://github-readme-stats.vercel.app/api/pin/?username=rishabhdev0&repo=liquidity-engine&theme=github_dark&hide_border=true" />
-</a>
-<a href="https://github.com/rishabhdev0/CipherVote">
-<img src="https://github-readme-stats.vercel.app/api/pin/?username=rishabhdev0&repo=CipherVote&theme=github_dark&hide_border=true" />
-</a>
-</div>
+| Repo | Description |
+|---|---|
+| ⚙️ **[liquidity-engine](https://github.com/rishabhdev0/liquidity-engine)** | Low-latency C++ matching engine — lock-free, memory-pooled, crash-safe |
+| 🗳️ **[CipherVote](https://github.com/rishabhdev0/CipherVote)** | Blockchain voting system with zero-knowledge ballot privacy |
+| 🎙️ **[Sonicra](https://github.com/rishabhdev0/Sonicra)** | AI voice generation SaaS with cloning & async workflows |
 
 ---
 
